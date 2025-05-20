@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",       // Для Node.js
+    "target": "es6",           // Поддержка современного JS
+    "checkJs": true,           // Включить проверку JS
+    "moduleResolution": "node" // Важно! Разрешить поиск модулей как в Node.js
+  },
+  "exclude": ["node_modules"]
+}
