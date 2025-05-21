@@ -1,6 +1,6 @@
-import database from "./database"
-import User from "./user";
-import Advertisement from "./advertisement";
+import database from "./database.js"
+import User from "./user.js";
+import Advertisement from "./advertisement.js";
 
 Advertisement.belongsTo(User, {foreignKey: 'authorId'});
 User.hasMany(User, {foreignKey: 'authorId'});

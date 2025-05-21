@@ -1,8 +1,8 @@
 import { title } from "process";
 import sequelize from "sequelize";
 
-import database from "./database";
-import User from "./user";
+import database from "./database.js";
+import User from "./user.js";
 
 const Advertisement = database.define(
     "advertisement", {
