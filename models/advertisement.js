@@ -1,4 +1,3 @@
-import { title } from "process";
 import sequelize from "sequelize";
 
 import database from "./database.js";
