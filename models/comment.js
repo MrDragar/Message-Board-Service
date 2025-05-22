@@ -2,39 +2,39 @@ import sequelize from "sequelize";
 
 import database from "./database.js";
 import User from "./user.js";
-import Category from "./category.js";
+import Advertisement from "./advertisement.js";
 
-const Advertisement = database.define(
-    "advertisement", {
-        id: {
+const Comment = database.define(
+    "category", {
+        id: { 
             type: sequelize.INTEGER,
             primaryKey: true,
             autoIncrement: true,
             allowNull: false
         },
-        title: {
+        content: {
             type: sequelize.STRING,
             allowNull: false
         },
-        status: {
-            type: sequelize.ENUM,
-            values: ["in_moderation", "published", "archived", "rejected" ]
-        },
-        authorId: {
+       publishTime: {
+            type: sequelize.TIME,
+            defaultValue: sequelize.NOW
+       },
+       authorId: {
             type: sequelize.INTEGER,
             references: {
                 model: User,
-                key: 'id',       
+                key: "id",       
             }
         },
-        categoryId: {
+        advertisementId: {
             type: sequelize.INTEGER,
             references: {
-                model: Category,
+                model: Advertisement,
                 key: "id"
             }
         }
-    },
+    }
 );
 
-export default Advertisement;
+export default Comment;

@@ -4,21 +4,21 @@ import database from "./database.js";
 
 const Category = database.define(
     "category", {
-        "id": { 
+        id: { 
             type: sequelize.INTEGER,
             primaryKey: true,
             autoIncrement: true,
             allowNull: false
         },
-        "name": {
+        name: {
             type: sequelize.STRING,
             unique: true,
             allowNull: false
         },
-        "description": {
+        description: {
             type: sequelize.STRING
         }
     }
 );
 
-export default Category;
+export default Category
