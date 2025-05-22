@@ -1,9 +1,9 @@
 const config = Object.freeze({
-    database: process.env.database,
-    login: process.env.login,
-    password: process.env.password,
+    database: process.env.DATABASE,
+    login: process.env.LOGIN,
+    password: process.env.PASSWORD,
     dialect: "mysql",
-    host: process.env.host
+    host: process.env.HOST
 });
 
 export default config;

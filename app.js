@@ -4,12 +4,13 @@ import cookieParser from 'cookie-parser';
 import logger from 'morgan';
 import { fileURLToPath } from 'url';  
 import { dirname, join } from 'path'; 
+import 'dotenv/config';
 
 import indexRouter from './routes/index.js';
 import usersRouter from './routes/users.js';
 import { User, Advertisement } from './models/index.js';
 
-
+// @ts-ignore
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 let app = express();
