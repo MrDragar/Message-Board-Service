@@ -18,7 +18,7 @@ const Advertisement = database.define(
         },
         status: {
             type: sequelize.ENUM,
-            values: ["in_moderation", "published", "archived", "rejected" ]
+            values: ["in_moderation", "published", "archived", "rejected", "deleted" ]
         },
         authorId: {
             type: sequelize.INTEGER,

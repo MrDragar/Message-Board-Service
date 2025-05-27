@@ -1,0 +1,95 @@
+extends layout
+
+block content
+  //- pre= JSON.stringify(guide_fields, null, 2)
+  .mx-auto.p-4
+    h2.text-3xl.font-bold.mb-4 Панель администрирования
+    
+    div.mb-4
+      h3.text-xl.font-semibold Управление пользователями
+      table.w-full.border-collapse.border
+        thead
+          tr.bg-gray-200
+            th.border.p-2 Логин
+            th.border.p-2 Роль
+            th.border.p-2 Действия
+        tbody
+          tr
+            td.border.p-2 user123
+            td.border.p-2 Пользователь
+            td.border.p-2
+              button.bg-blue-500.text-white.p-1.rounded Изменить роль
+              button.bg-red-500.text-white.p-1.rounded Заблокировать
+    
+    div.mb-4
+      h3.text-xl.font-semibold Управление категориями
+      form.mb-4
+        div.mb-4
+          label.block.text-gray-700 Название категории
+          input.w-full.p-2.border.rounded(type="text" placeholder="Например, Продажа")
+        div.mb-4
+          label.block.text-gray-700 Поля категории
+          input.w-full.p-2.border.rounded(type="text" placeholder="Например, Город, Тип животного")
+        button.bg-blue-600.text-white.p-2.rounded(type="submit") Добавить/Обновить категорию
+      
+      table.w-full.border-collapse.border
+        thead
+          tr.bg-gray-200
+            th.border.p-2 Категория
+            th.border.p-2 Поля
+            th.border.p-2 Действия
+        tbody
+          tr
+            td.border.p-2 Продажа
+            td.border.p-2 Город
+            td.border.p-2
+              button.bg-yellow-500.text-white.p-1.rounded Редактировать
+              button.bg-red-500.text-white.p-1.rounded Удалить
+          tr
+            td.border.p-2 Животные
+            td.border.p-2 Тип животного
+            td.border.p-2
+              button.bg-yellow-500.text-white.p-1.rounded Редактировать
+              button.bg-red-500.text-white.p-1.rounded Удалить
+    
+    div.mb-4
+      h3.text-xl.font-semibold Управление справочниками
+      form(action="/admin/add-guide-field/", method="POST").mb-4
+        if guide_field_error 
+          each error in guide_field_error 
+            .bg-red-100.border.border-red-400.text-red-700.px-4.py-3.rounded.relative.mb-4(role="alert")
+              span.block= error.msg
+        div.mb-4
+          label.block.text-gray-700 Поле спривочника
+          input.w-full.p-2.border.rounded(type="text", placeholder="Например, Город", id="field_name", required value=field_name, name="field_name")
+        button.bg-blue-600.text-white.p-2.rounded(type="submit") Добавить поле
+      form(action="/admin/add-guide-value", method="POST").mb-4
+        if guide_value_error 
+          each error in guide_value_error 
+            .bg-red-100.border.border-red-400.text-red-700.px-4.py-3.rounded.relative.mb-4(role="alert")
+              span.block= error.msg
+        div.mb-4
+          label.block.text-gray-700 Справочник
+          select(name="guide_field", required value=guide_field).w-full.p-2.border.rounded
+            each field in guide_fields
+              option(value=field.id)=field.name
+        div.mb-4
+          label.block.text-gray-700 Значение
+          input.w-full.p-2.border.rounded(type="text" placeholder="Например, Москва", id="field_value", required value=field_value, name="field_value")
+        button.bg-blue-600.text-white.p-2.rounded(type="submit") Добавить значение
+      
+      table.w-full.border-collapse.border
+        thead
+          tr.bg-gray-200
+            th.border.p-2 Справочник
+            th.border.p-2 Значения
+            th.border.p-2 Действия
+        tbody
+          each field in guide_fields
+            tr
+              td.border.p-2=field.name
+              td.border.p-2 #{field.guide_values.map(v => v.value).join(",  ")}
+              td.border.p-2
+                button.bg-yellow-500.text-white.p-1.rounded Редактировать
+                button.bg-red-500.text-white.p-1.rounded Удалить
+          

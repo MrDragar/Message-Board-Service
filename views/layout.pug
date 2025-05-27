@@ -3,5 +3,29 @@ html
   head
     title= title
     link(rel='stylesheet', href='/stylesheets/style.css')
+    link(rel='stylesheet', href='https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css')
   body
+    header.bg-blue-600.text-white.p-4
+      nav.container.mx-auto.flex.justify-between.items-center
+        h1.text-2xl.font-bold Доска объявлений
+        ul.flex.space-x-4
+          li
+            a.hover_underline(href="/") Главная
+          if !user            
+            li
+              a.hover_underline(href="/auth/register") Регистрация
+            li
+              a.hover_underline(href="/auth/login" ) Вход
+          else 
+            li
+              a.hover_underline(href="/profile" ) Личный кабинет
+            if user.role === "moderator"
+              li
+                a.hover_underline(href="/moderation") Модерация
+            if user.role === "admin"
+              li
+                a.hover_underline(href="/admin") Администрирование
+            li
+              a(href="/auth/logout" class="hover:underline") Выход
+    script(src="/javascripts/main.js")
     block content

@@ -1,8 +1,11 @@
 import database from "./database.js"
 import User from "./user.js";
 import Advertisement from "./advertisement.js";
-import Category from "./category.js"
-import Comment from "./comment.js"
+import Category from "./category.js";
+import Comment from "./comment.js";
+import Moderator from "./moderator.js";
+import GuideField from './guide_field.js';
+import GuideValue from './guide_value.js';
 
 Advertisement.belongsTo(User, {foreignKey: 'authorId'});
 User.hasMany(User, {foreignKey: 'authorId'});
@@ -16,8 +19,14 @@ Advertisement.hasMany(Comment, {foreignKey: "advertisementId"});
 Advertisement.belongsTo(Category, {foreignKey: "categoryId"});
 Category.hasMany(Advertisement, {foreignKey: "categoryId"});
 
-database.sync({force: true}).then(result=>{
+Category.belongsToMany(GuideField, {through: "Category_GuideField"});
+GuideField.belongsToMany(Category, {through: "Category_GuideField"});
+
+GuideValue.belongsTo(GuideField, {foreignKey: "guideFieldId"});
+GuideField.hasMany(GuideValue, {foreignKey: "guideFieldId"});
+
+database.sync({force: false}).then(result=>{
     console.log(result);
 }).catch(err=> console.log(err));
 
-export { User, Advertisement, Category};
+export { User, Advertisement, Category, Comment, Moderator, GuideField, GuideValue};

@@ -3,7 +3,8 @@ const config = Object.freeze({
     login: process.env.LOGIN,
     password: process.env.PASSWORD,
     dialect: "mysql",
-    host: process.env.HOST
+    host: process.env.HOST,
+    jwtSecret: '1232454657687654', 
 });
 
 export default config;

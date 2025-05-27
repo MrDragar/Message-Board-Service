@@ -24,8 +24,9 @@ const User = database.define(
             allowNull: false
         },
         role: {
-            type: sequelize.STRING,
-            defaultValue: "user"
+            type: sequelize.ENUM,
+            defaultValue: "user",
+            values: ["user", "admin", "moderator"]
         },
         isBanned: {
             type: sequelize.BOOLEAN,
@@ -48,10 +49,5 @@ User.prototype.updateRole = async function(newRole) {
     this.role = newRole;
     return await this.save();
 }
-
-database.sync({force: true}).then(result=>{
-    console.log(result);
-}).catch(err=> console.log(err));
-
 
 export default User;
