@@ -46,7 +46,6 @@ block content
             else
                 td.border.p-2="Пусто"
             td.border.p-2
-              a.bg-yellow-500.text-white.p-1.rounded(href=`/advertisement/edit/${ad.id}`) Редактировать
               button.bg-red-500.text-white.p-1.rounded(data-id=ad.id onclick="archiveAd(this)") Архивировать
     script.
       async function updateGuideFields() {

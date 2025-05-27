@@ -13,21 +13,27 @@ router.get('', [authMiddleware, checkRole(['moderator'])], async (req, res) => {
       include: [
         { model: User, attributes: ['login'] },
         { model: Category },
-        {model: GuideValue}
+        { model: GuideValue }
       ],
     });
-    const users = await User.findAll({
+    const nonBannedUsers = await User.findAll({
       where: { role: 'user', isBanned: false },
       attributes: ['id', 'login'],
     });
+    const bannedUsers = await User.findAll({
+      where: { role: 'user', isBanned: true },
+      attributes: ['id', 'login'],
+    });
+    console.log('Non-banned users:', nonBannedUsers.length, 'Banned users:', bannedUsers.length); // Debug log
     res.render('moderation', {
       title: 'Панель модерации',
       user: req.user,
       advertisements,
-      users,
+      nonBannedUsers,
+      bannedUsers,
     });
   } catch (error) {
-    console.error(error);
+    console.error('Error fetching moderation data:', error);
     res.status(500).render('error', { message: 'Ошибка сервера', error });
   }
 });
@@ -41,7 +47,7 @@ router.post('/publish/:id', [authMiddleware, checkRole(['moderator'])], async (r
     }
     res.json({ success: true });
   } catch (error) {
-    console.error(error);
+    console.error('Error publishing ad:', error);
     res.status(500).json({ message: 'Ошибка сервера' });
   }
 });
@@ -55,7 +61,7 @@ router.post('/reject/:id', [authMiddleware, checkRole(['moderator'])], async (re
     }
     res.json({ success: true });
   } catch (error) {
-    console.error(error);
+    console.error('Error rejecting ad:', error);
     res.status(500).json({ message: 'Ошибка сервера' });
   }
 });
@@ -71,7 +77,7 @@ router.post('/archive/:id', [authMiddleware, checkRole(['moderator'])], async (r
     await advertisement.save();
     res.json({ success: true });
   } catch (error) {
-    console.error(error);
+    console.error('Error archiving ad:', error);
     res.status(500).json({ message: 'Ошибка сервера' });
   }
 });
@@ -79,13 +85,48 @@ router.post('/archive/:id', [authMiddleware, checkRole(['moderator'])], async (r
 /* POST ban user */
 router.post('/ban-user/:userId', [authMiddleware, checkRole(['moderator'])], async (req, res) => {
   try {
-    const result = await Moderator.banUser(req.params.userId);
-    if (result === 1) {
+    const user = await User.findByPk(req.params.userId);
+    if (!user || user.role !== 'user') {
       return res.status(400).json({ message: 'Пользователь не найден или не может быть заблокирован' });
     }
+    user.isBanned = true;
+    await user.save();
+    console.log(`User ${user.login} banned`); // Debug log
     res.json({ success: true });
   } catch (error) {
-    console.error(error);
+    console.error('Error banning user:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+/* POST unban user */
+router.post('/unban-user/:userId', [authMiddleware, checkRole(['moderator'])], async (req, res) => {
+  try {
+    const user = await User.findByPk(req.params.userId);
+    if (!user || !user.isBanned) {
+      return res.status(400).json({ message: 'Пользователь не найден или не заблокирован' });
+    }
+    user.isBanned = false;
+    await user.save();
+    console.log(`User ${user.login} unbanned`); // Debug log
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error unbanning user:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+/* POST delete advertisement */
+router.post('/delete-ad/:id', [authMiddleware, checkRole(['moderator'])], async (req, res) => {
+  try {
+    const advertisement = await Advertisement.findByPk(req.params.id);
+    if (!advertisement) {
+      return res.status(404).json({ message: 'Объявление не найдено' });
+    }
+    await advertisement.destroy();
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting ad:', error);
     res.status(500).json({ message: 'Ошибка сервера' });
   }
 });

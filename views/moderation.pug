@@ -5,7 +5,7 @@ block content
     h2.text-3xl.font-bold.mb-4 Панель модерации
 
     // Advertisements on Moderation
-    .mb-4
+    .mb-8
       h3.text-xl.font-semibold.mb-2 Объявления на модерации
       if advertisements.length === 0
         p.text-gray-600 Нет объявлений на модерации
@@ -26,12 +26,13 @@ block content
                   button.bg-green-500.text-white.p-1.rounded(data-id=ad.id onclick="publishAd(this)") Опубликовать
                   button.bg-red-500.text-white.p-1.rounded.ml-2(data-id=ad.id onclick="rejectAd(this)") Отклонить
                   button.bg-yellow-500.text-white.p-1.rounded.ml-2(data-id=ad.id onclick="archiveAd(this)") Архивировать
+                  button.bg-gray-600.text-white.p-1.rounded.ml-2(data-id=ad.id onclick="deleteAd(this)") Удалить
 
-    // Violators (Users to Ban)
-    .mb-4
-      h3.text-xl.font-semibold.mb-2 Нарушители
-      if users.length === 0
-        p.text-gray-600 Нет пользователей для блокировки
+    // Non-Banned Users
+    .mb-8
+      h3.text-xl.font-semibold.mb-2 Обычные пользователи
+      if nonBannedUsers.length === 0
+        p.text-gray-600 Нет активных пользователей
       else
         table.w-full.border-collapse.border
           thead
@@ -39,50 +40,142 @@ block content
               th.border.p-2 Логин
               th.border.p-2 Действия
           tbody
-            each user in users
-              tr
+            each user in nonBannedUsers
+              tr(data-user-id=user.id)
                 td.border.p-2= user.login
                 td.border.p-2
-                  button.bg-red-500.text-white.p-1.rounded(data-id=user.id onclick="banUser(this)") Заблокировать
+                  button.bg-red-500.text-white.p-1.rounded.ban-btn(data-id=user.id) Заблокировать
 
+    // Banned Users
+    .mb-8
+      h3.text-xl.font-semibold.mb-2 Заблокированные пользователи
+      if bannedUsers.length === 0
+        p.text-gray-600 Нет заблокированных пользователей
+      else
+        table.w-full.border-collapse.border
+          thead
+            tr.bg-gray-200
+              th.border.p-2 Логин
+              th.border.p-2 Действия
+          tbody
+            each user in bannedUsers
+              tr(data-user-id=user.id)
+                td.border.p-2= user.login
+                td.border.p-2
+                  button.bg-green-500.text-white.p-1.rounded.unban-btn(data-id=user.id) Разблокировать
+
+    script(src="https://code.jquery.com/jquery-3.6.0.min.js")
     script.
-      async function publishAd(button) {
-        const adId = button.dataset.id;
-        const response = await fetch(`/moderation/publish/${adId}`, { method: 'POST' });
-        if (response.ok) {
-          window.location.reload();
-        } else {
-          const error = await response.json();
-          alert(error.message || 'Ошибка при публикации');
+      $(document).ready(function() {
+        // Publish advertisement
+        async function publishAd(button) {
+          const adId = $(button).data('id');
+          try {
+            const response = await $.ajax({
+              url: `/moderation/publish/${adId}`,
+              method: 'POST',
+            });
+            if (response.success) {
+              window.location.reload();
+            }
+          } catch (error) {
+            alert(error.responseJSON?.message || 'Ошибка при публикации');
+          }
         }
-      }
-      async function rejectAd(button) {
-        const adId = button.dataset.id;
-        const response = await fetch(`/moderation/reject/${adId}`, { method: 'POST' });
-        if (response.ok) {
-          window.location.reload();
-        } else {
-          const error = await response.json();
-          alert(error.message || 'Ошибка при отклонении');
+
+        // Reject advertisement
+        async function rejectAd(button) {
+          const adId = $(button).data('id');
+          try {
+            const response = await $.ajax({
+              url: `/moderation/reject/${adId}`,
+              method: 'POST',
+            });
+            if (response.success) {
+              window.location.reload();
+            }
+          } catch (error) {
+            alert(error.responseJSON?.message || 'Ошибка при отклонении');
+          }
         }
-      }
-      async function archiveAd(button) {
-        const adId = button.dataset.id;
-        const response = await fetch(`/moderation/archive/${adId}`, { method: 'POST' });
-        if (response.ok) {
-          window.location.reload();
-        } else {
-          const error = await response.json();
-          alert(error.message || 'Ошибка при архивировании');
+
+        // Archive advertisement
+        async function archiveAd(button) {
+          const adId = $(button).data('id');
+          try {
+            const response = await $.ajax({
+              url: `/moderation/archive/${adId}`,
+              method: 'POST',
+            });
+            if (response.success) {
+              window.location.reload();
+            }
+          } catch (error) {
+            alert(error.responseJSON?.message || 'Ошибка при архивировании');
+          }
         }
-      }
-      async function banUser(button) {
-        const userId = button.dataset.id;
-        const response = await fetch(`/moderation/ban-user/${userId}`, { method: 'POST' });
-        if (response.ok) {
-          window.location.reload();
-        } else {
-          const error = await response.json();
-          alert(error.message || 'Ошибка при блокировке');
+
+        // Delete advertisement
+        async function deleteAd(button) {
+          const adId = $(button).data('id');
+          try {
+            const response = await $.ajax({
+              url: `/moderation/delete-ad/${adId}`,
+              method: 'POST',
+            });
+            if (response.success) {
+              window.location.reload();
+            }
+          } catch (error) {
+            alert(error.responseJSON?.message || 'Ошибка при удалении');
+          }
         }
-      }
+
+        // Ban user
+        $(document).on('click', '.ban-btn', async function() {
+          const userId = $(this).data('id');
+          if (!confirm('Вы уверены, что хотите заблокировать пользователя?')) return;
+          try {
+            const response = await $.ajax({
+              url: `/moderation/ban-user/${userId}`,
+              method: 'POST',
+            });
+            if (response.success) {
+              const $row = $(`tr[data-user-id="${userId}"]`);
+              const $bannedTable = $('table').last().find('tbody');
+              $row.find('td:last').html('<button class="bg-green-500 text-white p-1 rounded unban-btn" data-id="' + userId + '">Разблокировать</button>');
+              $bannedTable.append($row);
+              if ($('table').first().find('tbody tr').length === 0) {
+                $('table').first().after('<p class="text-gray-600">Нет активных пользователей</p>');
+                $('table').first().remove();
+              }
+            }
+          } catch (error) {
+            alert(error.responseJSON?.message || 'Ошибка при блокировке');
+          }
+        });
+
+        // Unban user
+        $(document).on('click', '.unban-btn', async function() {
+          const userId = $(this).data('id');
+          if (!confirm('Вы уверены, что хотите разблокировать пользователя?')) return;
+          try {
+            const response = await $.ajax({
+              url: `/moderation/unban-user/${userId}`,
+              method: 'POST',
+            });
+            if (response.success) {
+              const $row = $(`tr[data-user-id="${userId}"]`);
+              const $nonBannedTable = $('table').first().find('tbody');
+              $row.find('td:last').html('<button class="bg-red-500 text-white p-1 rounded ban-btn" data-id="' + userId + '">Заблокировать</button>');
+              $nonBannedTable.append($row);
+              if ($('table').last().find('tbody tr').length === 0) {
+                $('table').last().after('<p class="text-gray-600">Нет заблокированных пользователей</p>');
+                $('table').last().remove();
+              }
+            }
+          } catch (error) {
+            alert(error.responseJSON?.message || 'Ошибка при разблокировке');
+          }
+        });
+      });

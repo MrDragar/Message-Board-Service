@@ -206,6 +206,20 @@ router.post('/ban-user/:userId', [authMiddleware, checkRole(['admin'])], async (
   }
 });
 
+router.post('/unban-user/:userId', [authMiddleware, checkRole(['admin'])], async (req, res) => {
+  try {
+    const user = await User.findByPk(req.params.userId);
+    if (!user || user.role !== 'user') {
+      return res.status(400).json({ message: 'Нельзя разблокировать этого пользователя' });
+    }
+    await user.unban();
+    res.redirect('/admin');
+  } catch (error) {
+    console.error(error);
+    res.status(500).render('error', { message: 'Ошибка сервера', error });
+  }
+});
+
 /* POST change user role */
 router.post('/change-role/:userId', [authMiddleware, checkRole(['admin'])], async (req, res) => {
   const { newRole } = req.body;

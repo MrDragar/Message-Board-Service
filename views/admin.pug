@@ -25,9 +25,12 @@ block content
                     option(value="moderator" selected=user.role=="moderator") Модератор
                     option(value="admin" selected=user.role=="admin") Админ
                   button.bg-blue-500.text-white.p-1.rounded(type="submit") Изменить роль
-                if user.role === 'user'
+                if user.role === 'user' & user.isBanned == false
                   form(action=`/admin/ban-user/${user.id}` method="POST" class="inline ml-2")
                     button.bg-red-500.text-white.p-1.rounded(type="submit") Заблокировать
+                if user.role === 'user' & user.isBanned == true
+                  form(action=`/admin/unban-user/${user.id}` method="POST" class="inline ml-2")
+                    button.bg-blue-500.text-white.p-1.rounded(type="submit") Разблокировать
 
     // Manage Categories
     .mb-8
