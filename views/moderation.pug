@@ -1,0 +1,88 @@
+extends layout
+
+block content
+  .container.mx-auto.p-4
+    h2.text-3xl.font-bold.mb-4 Панель модерации
+
+    // Advertisements on Moderation
+    .mb-4
+      h3.text-xl.font-semibold.mb-2 Объявления на модерации
+      if advertisements.length === 0
+        p.text-gray-600 Нет объявлений на модерации
+      else
+        table.w-full.border-collapse.border
+          thead
+            tr.bg-gray-200
+              th.border.p-2 Заголовок
+              th.border.p-2 Статус
+              th.border.p-2 Действия
+          tbody
+            each ad in advertisements
+              tr
+                td.border.p-2
+                  a.text-blue-600.hover_underline(href=`/advertisement/${ad.id}`)= ad.title
+                td.border.p-2= ad.status === 'in_moderation' ? 'На модерации' : ad.status
+                td.border.p-2
+                  button.bg-green-500.text-white.p-1.rounded(data-id=ad.id onclick="publishAd(this)") Опубликовать
+                  button.bg-red-500.text-white.p-1.rounded.ml-2(data-id=ad.id onclick="rejectAd(this)") Отклонить
+                  button.bg-yellow-500.text-white.p-1.rounded.ml-2(data-id=ad.id onclick="archiveAd(this)") Архивировать
+
+    // Violators (Users to Ban)
+    .mb-4
+      h3.text-xl.font-semibold.mb-2 Нарушители
+      if users.length === 0
+        p.text-gray-600 Нет пользователей для блокировки
+      else
+        table.w-full.border-collapse.border
+          thead
+            tr.bg-gray-200
+              th.border.p-2 Логин
+              th.border.p-2 Действия
+          tbody
+            each user in users
+              tr
+                td.border.p-2= user.login
+                td.border.p-2
+                  button.bg-red-500.text-white.p-1.rounded(data-id=user.id onclick="banUser(this)") Заблокировать
+
+    script.
+      async function publishAd(button) {
+        const adId = button.dataset.id;
+        const response = await fetch(`/moderation/publish/${adId}`, { method: 'POST' });
+        if (response.ok) {
+          window.location.reload();
+        } else {
+          const error = await response.json();
+          alert(error.message || 'Ошибка при публикации');
+        }
+      }
+      async function rejectAd(button) {
+        const adId = button.dataset.id;
+        const response = await fetch(`/moderation/reject/${adId}`, { method: 'POST' });
+        if (response.ok) {
+          window.location.reload();
+        } else {
+          const error = await response.json();
+          alert(error.message || 'Ошибка при отклонении');
+        }
+      }
+      async function archiveAd(button) {
+        const adId = button.dataset.id;
+        const response = await fetch(`/moderation/archive/${adId}`, { method: 'POST' });
+        if (response.ok) {
+          window.location.reload();
+        } else {
+          const error = await response.json();
+          alert(error.message || 'Ошибка при архивировании');
+        }
+      }
+      async function banUser(button) {
+        const userId = button.dataset.id;
+        const response = await fetch(`/moderation/ban-user/${userId}`, { method: 'POST' });
+        if (response.ok) {
+          window.location.reload();
+        } else {
+          const error = await response.json();
+          alert(error.message || 'Ошибка при блокировке');
+        }
+      }

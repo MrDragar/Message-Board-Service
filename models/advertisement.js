@@ -16,6 +16,10 @@ const Advertisement = database.define(
             type: sequelize.STRING,
             allowNull: false
         },
+        content: {
+            type: sequelize.TEXT,
+            allowNull: false,
+        },
         status: {
             type: sequelize.ENUM,
             values: ["in_moderation", "published", "archived", "rejected", "deleted" ]

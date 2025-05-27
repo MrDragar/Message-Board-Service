@@ -1,32 +1,39 @@
-import database from "./database.js"
-import User from "./user.js";
-import Advertisement from "./advertisement.js";
-import Category from "./category.js";
-import Comment from "./comment.js";
-import Moderator from "./moderator.js";
+import database from './database.js';
+import User from './user.js';
+import Advertisement from './advertisement.js';
+import Category from './category.js';
+import Comment from './comment.js';
+import Moderator from './moderator.js';
 import GuideField from './guide_field.js';
 import GuideValue from './guide_value.js';
 
-Advertisement.belongsTo(User, {foreignKey: 'authorId'});
-User.hasMany(User, {foreignKey: 'authorId'});
+// Define associations
+Advertisement.belongsTo(User, { foreignKey: 'authorId' });
+User.hasMany(Advertisement, { foreignKey: 'authorId' });
 
-Comment.belongsTo(User, {foreignKey: "authorId"});
-User.hasMany(Comment, {foreignKey: "authorId"});
+Comment.belongsTo(User, { foreignKey: 'authorId' });
+User.hasMany(Comment, { foreignKey: 'authorId' });
 
-Comment.belongsTo(Advertisement, {foreignKey: "advertisementId"});
-Advertisement.hasMany(Comment, {foreignKey: "advertisementId"});
+Comment.belongsTo(Advertisement, { foreignKey: 'advertisementId' });
+Advertisement.hasMany(Comment, { foreignKey: 'advertisementId' });
 
-Advertisement.belongsTo(Category, {foreignKey: "categoryId"});
-Category.hasMany(Advertisement, {foreignKey: "categoryId"});
+Advertisement.belongsTo(Category, { foreignKey: 'categoryId' });
+Category.hasMany(Advertisement, { foreignKey: 'categoryId' });
 
-Category.belongsToMany(GuideField, {through: "Category_GuideField"});
-GuideField.belongsToMany(Category, {through: "Category_GuideField"});
+Category.belongsToMany(GuideField, { through: 'Category_GuideField', foreignKey: 'categoryId' });
+GuideField.belongsToMany(Category, { through: 'Category_GuideField', foreignKey: 'guideFieldId' });
 
-GuideValue.belongsTo(GuideField, {foreignKey: "guideFieldId"});
-GuideField.hasMany(GuideValue, {foreignKey: "guideFieldId"});
+GuideValue.belongsTo(GuideField, { foreignKey: 'guideFieldId' });
+GuideField.hasMany(GuideValue, { foreignKey: 'guideFieldId' });
 
-database.sync({force: false}).then(result=>{
-    console.log(result);
-}).catch(err=> console.log(err));
+Advertisement.belongsToMany(GuideValue, { through: 'Advertisement_GuideValue', foreignKey: 'advertisementId' });
+GuideValue.belongsToMany(Advertisement, { through: 'Advertisement_GuideValue', foreignKey: 'guideValueId' });
 
-export { User, Advertisement, Category, Comment, Moderator, GuideField, GuideValue};
+// Sync database
+database.sync({ force: false }).then(() => {
+  console.log('Database synced successfully');
+}).catch(err => {
+  console.error('Error syncing database:', err);
+});
+
+export { User, Advertisement, Category, Comment, Moderator, GuideField, GuideValue };

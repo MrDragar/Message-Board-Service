@@ -14,7 +14,7 @@ import authRouter from './routes/auth.js'
 import adminRouter from './routes/admin.js';
 import profileRouter from './routes/profile.js';
 import advertisementRouter from './routes/advertisement.js';
-import moderatorRouter from './routes/moderator.js';
+import moderatorRouter from './routes/moderation.js';
 import { User, Advertisement } from './models/index.js';
 import { authMiddleware } from "./middleware/auth.js"
 import config from './config.js'
@@ -47,7 +47,7 @@ app.use('/users', usersRouter);
 app.use('/admin', adminRouter);
 app.use('/profile', profileRouter);
 app.use('/advertisement', advertisementRouter);
-app.use('/moderator', moderatorRouter);
+app.use('/moderation', moderatorRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

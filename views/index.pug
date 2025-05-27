@@ -1,5 +1,67 @@
 extends layout
 
 block content
-  h1= title
-  p Welcome to #{title}
+  .container.mx-auto.p-4
+    h2.text-3xl.font-bold.mb-4 Объявления
+
+    // Search and Filters
+    form(action="/" method="GET").mb-4.bg-gray-100.p-4.rounded
+      h3.text-xl.font-semibold.mb-2 Поиск и фильтры
+      .grid.grid-cols-1.md_grid-cols-3.gap-4
+        .mb-4
+          label.block.text-gray-700.mb-2 Поиск по ключевым словам
+          input.w-full.p-2.border.rounded(type="text" name="search" value=search placeholder="Введите ключевые слова")
+        .mb-4
+          label.block.text-gray-700.mb-2 Категория
+          select.w-full.p-2.border.rounded(name="category" id="category" onchange="updateGuideFields()")
+            option(value="") Все категории
+            each cat in categories
+              option(value=cat.id selected=category==cat.id)= cat.name
+        .mb-4#guideFields
+          each field in guideFields
+            .mb-4
+              label.block.text-gray-700.mb-2= field.name
+              select.w-full.p-2.border.rounded(name="guideValues")
+                option(value="") Все #{field.name.toLowerCase()}
+                each value in field.guide_values
+                  option(value=value.id selected=guideValues&&guideValues.includes(value.id.toString()))= value.value
+      .flex.space-x-2
+        button.bg-blue-600.text-white.p-2.rounded(type="submit") Поиск
+        a.bg-gray-300.text-black.p-2.rounded(href="/") Очистить фильтры
+
+    // Advertisements List
+    .grid.grid-cols-1.md_grid-cols-2.lg_grid-cols-3.gap-4
+      each ad in advertisements
+        .border.p-4.rounded.shadow
+          h3.text-xl.font-semibold
+            a.text-blue-600.hover_underline(href=`/advertisement/${ad.id}`)= ad.title
+          p= ad.guide_values.map(v => v.value).join(', ')
+          p Категория: #{ad.category.name}
+          p Статус: #{ad.status === 'published' ? 'Опубликовано' : ad.status === 'in_moderation' ? 'На модерации' : 'Архивировано'}
+          p Теги: #{ad.guide_values.map(v => `#${v.value}`).join(' ')}
+          p Автор: #{ad.user.login}
+    script.
+      async function updateGuideFields() {
+        const categoryId = document.getElementById('category').value;
+        const guideFieldsDiv = document.getElementById('guideFields');
+        guideFieldsDiv.innerHTML = '';
+        if (!categoryId) return;
+        try {
+          const response = await fetch(`/guide-values/${categoryId}`);
+          const guideFields = await response.json();
+          guideFields.forEach(field => {
+            const div = document.createElement('div');
+            div.className = 'mb-4';
+            div.innerHTML = `
+              <label class="block text-gray-700 mb-2">${field.name}</label>
+              <select class="w-full p-2 border rounded" name="guideValues">
+                <option value="">Все ${field.name.toLowerCase()}</option>
+                ${field.guide_values.map(value => `<option value="${value.id}">${value.value}</option>`).join('')}
+              </select>
+            `;
+            guideFieldsDiv.appendChild(div);
+          });
+        } catch (error) {
+          console.error('Error fetching guide fields:', error);
+        }
+      }

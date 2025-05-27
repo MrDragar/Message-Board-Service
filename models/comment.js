@@ -5,7 +5,7 @@ import User from "./user.js";
 import Advertisement from "./advertisement.js";
 
 const Comment = database.define(
-    "category", {
+    "comment", {
         id: { 
             type: sequelize.INTEGER,
             primaryKey: true,

@@ -1,0 +1,81 @@
+extends layout
+
+block content
+  .container.mx-auto.p-4
+    h2.text-3xl.font-bold.mb-4 Личный кабинет
+
+    // Create Advertisement
+    h3.text-xl.font-semibold.mb-2 Создать объявление
+    form(action="/profile/create-ad" method="POST").mb-4.bg-gray-100.p-4.rounded
+      if errors
+        each error in errors
+          .bg-red-100.border.border-red-400.text-red-700.px-4.py-3.rounded.relative.mb-4(role="alert")
+            span.block= error.msg
+      .mb-4
+        label.block.text-gray-700.mb-2 Заголовок
+        input.w-full.p-2.border.rounded(type="text" name="title" required value=title_value)
+      .mb-4
+        label.block.text-gray-700.mb-2 Текст
+        textarea.w-full.p-2.border.rounded(name="content" required)= content
+      .mb-4
+        label.block.text-gray-700.mb-2 Категория
+        select.w-full.p-2.border.rounded(name="category" id="category" required onchange="updateGuideFields()")
+          option(value="") Выберите категорию
+          each cat in categories
+            option(value=cat.id selected=category==cat.id)= cat.name
+      .mb-4#guideFields
+        // Guide fields will be populated dynamically via AJAX
+      button.bg-blue-600.text-white.p-2.rounded(type="submit") Отправить на модерацию
+
+    // User's Advertisements
+    h3.text-xl.font-semibold.mb-2 Мои объявления
+    table.w-full.border-collapse.border
+      thead
+        tr.bg-gray-200
+          th.border.p-2 Заголовок
+          th.border.p-2 Статус
+          th.border.p-2 Поля
+          th.border.p-2 Действия
+      tbody
+        each ad in advertisements
+          tr
+            td.border.p-2= ad.title
+            td.border.p-2= ad.status === 'published' ? 'Опубликовано' : ad.status === 'in_moderation' ? 'На модерации' : 'Архивировано'
+            td.border.p-2= ad.guide_values.map(v => v.value).join(', ')
+            td.border.p-2
+              a.bg-yellow-500.text-white.p-1.rounded(href=`/advertisement/edit/${ad.id}`) Редактировать
+              button.bg-red-500.text-white.p-1.rounded(data-id=ad.id onclick="archiveAd(this)") Архивировать
+    script.
+      async function updateGuideFields() {
+        const categoryId = document.getElementById('category').value;
+        const guideFieldsDiv = document.getElementById('guideFields');
+        guideFieldsDiv.innerHTML = '';
+        if (!categoryId) return;
+        try {
+          const response = await fetch(`/profile/guide-values/${categoryId}`);
+          const guideFields = await response.json();
+          guideFields.forEach(field => {
+            const div = document.createElement('div');
+            div.className = 'mb-4';
+            div.innerHTML = `
+              <label class="block text-gray-700 mb-2">${field.name}</label>
+              <select class="w-full p-2 border rounded" name="guideValues">
+                <option value="">Выберите ${field.name}</option>
+                ${field.guide_values.map(value => `<option value="${value.id}">${value.value}</option>`).join('')}
+              </select>
+            `;
+            guideFieldsDiv.appendChild(div);
+          });
+        } catch (error) {
+          console.error('Error fetching guide fields:', error);
+        }
+      }
+      async function archiveAd(button) {
+        const adId = button.dataset.id;
+        const response = await fetch(`/advertisement/archive/${adId}`, { method: 'POST' });
+        if (response.ok) {
+          window.location.reload();
+        } else {
+          alert('Ошибка при архивировании');
+        }
+      }

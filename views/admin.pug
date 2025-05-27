@@ -1,11 +1,11 @@
 extends layout
 
 block content
-  //- pre= JSON.stringify(guide_fields, null, 2)
-  .mx-auto.p-4
+  .container.mx-auto.p-4
     h2.text-3xl.font-bold.mb-4 Панель администрирования
-    
-    div.mb-4
+
+    // Manage Users
+    .mb-4
       h3.text-xl.font-semibold Управление пользователями
       table.w-full.border-collapse.border
         thead
@@ -14,24 +14,38 @@ block content
             th.border.p-2 Роль
             th.border.p-2 Действия
         tbody
-          tr
-            td.border.p-2 user123
-            td.border.p-2 Пользователь
-            td.border.p-2
-              button.bg-blue-500.text-white.p-1.rounded Изменить роль
-              button.bg-red-500.text-white.p-1.rounded Заблокировать
-    
-    div.mb-4
+          each user in users
+            tr
+              td.border.p-2= user.login
+              td.border.p-2= user.role
+              td.border.p-2
+                form(action=`/admin/change-role/${user.id}` method="POST" class="inline")
+                  select(name="newRole")
+                    option(value="user" selected=user.role=="user") Пользователь
+                    option(value="moderator" selected=user.role=="moderator") Модератор
+                    option(value="admin" selected=user.role=="admin") Админ
+                  button.bg-blue-500.text-white.p-1.rounded(type="submit") Изменить роль
+                if user.role === 'user'
+                  form(action=`/admin/ban-user/${user.id}` method="POST" class="inline ml-2")
+                    button.bg-red-500.text-white.p-1.rounded(type="submit") Заблокировать
+
+    // Manage Categories
+    .mb-4
       h3.text-xl.font-semibold Управление категориями
-      form.mb-4
-        div.mb-4
+      form(action="/admin/add-category" method="POST").mb-4
+        if category_error
+          each error in category_error
+            .bg-red-100.border.border-red-400.text-red-700.px-4.py-3.rounded.relative.mb-4(role="alert")
+              span.block= error.msg
+        .mb-4
           label.block.text-gray-700 Название категории
-          input.w-full.p-2.border.rounded(type="text" placeholder="Например, Продажа")
-        div.mb-4
+          input.w-full.p-2.border.rounded(type="text" name="category_name" placeholder="Например, Продажа" value=category_name required)
+        .mb-4
           label.block.text-gray-700 Поля категории
-          input.w-full.p-2.border.rounded(type="text" placeholder="Например, Город, Тип животного")
+          select.w-full.p-2.border.rounded(name="guide_fields" multiple)
+            each field in guide_fields
+              option(value=field.id)= field.name
         button.bg-blue-600.text-white.p-2.rounded(type="submit") Добавить/Обновить категорию
-      
       table.w-full.border-collapse.border
         thead
           tr.bg-gray-200
@@ -39,45 +53,50 @@ block content
             th.border.p-2 Поля
             th.border.p-2 Действия
         tbody
-          tr
-            td.border.p-2 Продажа
-            td.border.p-2 Город
-            td.border.p-2
-              button.bg-yellow-500.text-white.p-1.rounded Редактировать
-              button.bg-red-500.text-white.p-1.rounded Удалить
-          tr
-            td.border.p-2 Животные
-            td.border.p-2 Тип животного
-            td.border.p-2
-              button.bg-yellow-500.text-white.p-1.rounded Редактировать
-              button.bg-red-500.text-white.p-1.rounded Удалить
-    
-    div.mb-4
+          each cat in categories
+            tr
+              td.border.p-2= cat.name
+              td.border.p-2= cat.guide_fields && cat.guide_fields.length ? cat.guide_fields.map(f => f.name).join(', ') : 'Нет полей'
+              td.border.p-2
+                button.bg-yellow-500.text-white.p-1.rounded Редактировать
+                button.bg-red-500.text-white.p-1.rounded(data-id=cat.id onclick="deleteCategory(this)") Удалить
+      script.
+        async function deleteCategory(button) {
+          const catId = button.dataset.id;
+          const response = await fetch(`/admin/delete-category/${catId}`, { method: 'POST' });
+          if (response.ok) {
+            window.location.reload();
+          } else {
+            alert('Ошибка при удалении категории');
+          }
+        }
+
+    // Manage Guide Fields and Values
+    .mb-4
       h3.text-xl.font-semibold Управление справочниками
-      form(action="/admin/add-guide-field/", method="POST").mb-4
-        if guide_field_error 
-          each error in guide_field_error 
+      form(action="/admin/add-guide-field" method="POST").mb-4
+        if guide_field_error
+          each error in guide_field_error
             .bg-red-100.border.border-red-400.text-red-700.px-4.py-3.rounded.relative.mb-4(role="alert")
               span.block= error.msg
-        div.mb-4
-          label.block.text-gray-700 Поле спривочника
-          input.w-full.p-2.border.rounded(type="text", placeholder="Например, Город", id="field_name", required value=field_name, name="field_name")
+        .mb-4
+          label.block.text-gray-700 Поле справочника
+          input.w-full.p-2.border.rounded(type="text" name="field_name" placeholder="Например, Город" required value=field_name)
         button.bg-blue-600.text-white.p-2.rounded(type="submit") Добавить поле
-      form(action="/admin/add-guide-value", method="POST").mb-4
-        if guide_value_error 
-          each error in guide_value_error 
+      form(action="/admin/add-guide-value" method="POST").mb-4
+        if guide_value_error
+          each error in guide_value_error
             .bg-red-100.border.border-red-400.text-red-700.px-4.py-3.rounded.relative.mb-4(role="alert")
               span.block= error.msg
-        div.mb-4
+        .mb-4
           label.block.text-gray-700 Справочник
-          select(name="guide_field", required value=guide_field).w-full.p-2.border.rounded
+          select.w-full.p-2.border.rounded(name="guide_field" required value=guide_field)
             each field in guide_fields
-              option(value=field.id)=field.name
-        div.mb-4
+              option(value=field.id selected=guide_field==field.id)= field.name
+        .mb-4
           label.block.text-gray-700 Значение
-          input.w-full.p-2.border.rounded(type="text" placeholder="Например, Москва", id="field_value", required value=field_value, name="field_value")
+          input.w-full.p-2.border.rounded(type="text" name="field_value" placeholder="Например, Москва" required value=field_value)
         button.bg-blue-600.text-white.p-2.rounded(type="submit") Добавить значение
-      
       table.w-full.border-collapse.border
         thead
           tr.bg-gray-200
@@ -87,9 +106,18 @@ block content
         tbody
           each field in guide_fields
             tr
-              td.border.p-2=field.name
-              td.border.p-2 #{field.guide_values.map(v => v.value).join(",  ")}
+              td.border.p-2= field.name
+              td.border.p-2= field.guide_values && field.guide_values.length ? field.guide_values.map(v => v.value).join(', ') : 'Нет значений'
               td.border.p-2
                 button.bg-yellow-500.text-white.p-1.rounded Редактировать
-                button.bg-red-500.text-white.p-1.rounded Удалить
-          
+                button.bg-red-500.text-white.p-1.rounded(data-id=field.id onclick="deleteGuideField(this)") Удалить
+      script.
+        async function deleteGuideField(button) {
+          const fieldId = button.dataset.id;
+          const response = await fetch(`/admin/delete-guide-field/${fieldId}`, { method: 'POST' });
+          if (response.ok) {
+            window.location.reload();
+          } else {
+            alert('Ошибка при удалении справочника');
+          }
+        }
