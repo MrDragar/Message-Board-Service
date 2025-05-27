@@ -61,21 +61,35 @@ router.post('/:id/comment', [
   check('content', 'Комментарий не должен быть пустым').notEmpty(),
 ], async (req, res) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    const advertisement = await Advertisement.findByPk(req.params.id, {
-      include: [
-        { model: User, attributes: ['login'] },
-        { model: Category },
-        {
-          model: GuideValue,
-          include: [{ model: GuideField, attributes: ['name'] }],
-        },
-        {
-          model: Comment,
-          include: [{ model: User, attributes: ['login'] }],
-        },
-      ],
+  const advertisement = await Advertisement.findByPk(req.params.id, {
+    include: [
+      { model: User, attributes: ['login'] },
+      { model: Category },
+      {
+        model: GuideValue,
+        include: [{ model: GuideField, attributes: ['name'] }],
+      },
+      {
+        model: Comment,
+        include: [{ model: User, attributes: ['login'] }],
+      },
+    ],
+  });
+
+  if (!advertisement) {
+    return res.status(404).render('error', { message: 'Объявление не найдено' });
+  }
+
+  if (advertisement.status !== 'published') {
+    return res.render('advertisement', {
+      title: advertisement.title,
+      advertisement,
+      user: req.user,
+      comment_error: [{ msg: 'Комментарии разрешены только для опубликованных объявлений' }],
     });
+  }
+
+  if (!errors.isEmpty()) {
     return res.render('advertisement', {
       title: advertisement.title,
       advertisement,
@@ -100,11 +114,13 @@ router.post('/:id/comment', [
 /* POST delete comment */
 router.post('/comment/delete/:id', authMiddleware, async (req, res) => {
   try {
-    const comment = await Comment.findByPk(req.params.id);
+    const comment = await Comment.findByPk(req.params.id, {
+      include: [{ model: Advertisement }],
+    });
     if (!comment) {
       return res.status(404).json({ message: 'Комментарий не найден' });
     }
-    if (req.user.id !== comment.authorId && req.user.role !== 'moderator') {
+    if (req.user.id !== comment.advertisement.authorId && req.user.role !== 'moderator') {
       return res.status(403).json({ message: 'Нет прав для удаления' });
     }
     await comment.destroy();

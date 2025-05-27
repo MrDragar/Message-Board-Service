@@ -30,8 +30,11 @@ export  async function authMiddleware(req, res, next) {
 
 export function checkRole(roles) {
     return function(req, res, next) {
-      if (!roles.includes(req.user.role)) {
-        return res.status(403).json({ message: 'Нет доступа' });
+      if (!req.user || !roles.includes(req.user.role)) {
+        return res.status(403).render('access-denied', {
+          title: 'Доступ запрещен',
+          user: req.user,
+        });
       }
       next();
     };

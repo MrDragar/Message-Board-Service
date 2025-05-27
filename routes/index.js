@@ -1,15 +1,15 @@
 import express from 'express';
 import { Op } from 'sequelize';
-import { Advertisement, Category, GuideField, GuideValue, User } from '../models/index.js';
+import { Advertisement, Category, GuideValue, User, GuideField } from '../models/index.js';
 import { authMiddleware } from '../middleware/auth.js';
 
-var router = express.Router();
+const router = express.Router();
 
-/* GET home page with advertisements and filters */
+/* GET home page with published advertisements */
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const { search, category, guideValues } = req.query;
-    const where = {};
+    const where = { status: 'published' };
 
     if (search) {
       where.title = { [Op.like]: `%${search}%` };
@@ -26,11 +26,13 @@ router.get('/', authMiddleware, async (req, res) => {
           model: Category,
           include: [{ model: GuideField, include: [GuideValue] }],
         },
-        { model: GuideValue },
+        {
+          model: GuideValue,
+          include: [{ model: GuideField, attributes: ['name'] }],
+        },
       ],
     });
 
-    // Filter advertisements by guide values if provided
     let filteredAds = advertisements;
     if (guideValues) {
       const guideValueIds = Array.isArray(guideValues) ? guideValues : [guideValues];
@@ -70,6 +72,49 @@ router.get('/guide-values/:categoryId', authMiddleware, async (req, res) => {
       return res.status(404).json({ message: 'Категория не найдена' });
     }
     res.json(category.guide_fields);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+/* GET filtered advertisements */
+router.get('/filter', authMiddleware, async (req, res) => {
+  try {
+    const { search, category, guideValues } = req.query;
+    const where = { status: 'published' };
+
+    if (search) {
+      where.title = { [Op.like]: `%${search}%` };
+    }
+    if (category) {
+      where.categoryId = category;
+    }
+
+    const advertisements = await Advertisement.findAll({
+      where,
+      include: [
+        { model: User, attributes: ['login'] },
+        {
+          model: Category,
+          include: [{ model: GuideField, include: [GuideValue] }],
+        },
+        {
+          model: GuideValue,
+          include: [{ model: GuideField, attributes: ['name'] }],
+        },
+      ],
+    });
+
+    let filteredAds = advertisements;
+    if (guideValues) {
+      const guideValueIds = Array.isArray(guideValues) ? guideValues.map(id => parseInt(id)) : [parseInt(guideValues)];
+      filteredAds = advertisements.filter(ad =>
+        guideValueIds.every(id => ad.guide_values.some(gv => gv.id === id))
+      );
+    }
+
+    res.json(filteredAds);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Ошибка сервера' });

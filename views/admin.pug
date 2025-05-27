@@ -5,8 +5,8 @@ block content
     h2.text-3xl.font-bold.mb-4 Панель администрирования
 
     // Manage Users
-    .mb-4
-      h3.text-xl.font-semibold Управление пользователями
+    .mb-8
+      h3.text-xl.font-semibold.mb-2 Управление пользователями
       table.w-full.border-collapse.border
         thead
           tr.bg-gray-200
@@ -30,22 +30,22 @@ block content
                     button.bg-red-500.text-white.p-1.rounded(type="submit") Заблокировать
 
     // Manage Categories
-    .mb-4
-      h3.text-xl.font-semibold Управление категориями
+    .mb-8
+      h3.text-xl.font-semibold.mb-2 Управление категориями
       form(action="/admin/add-category" method="POST").mb-4
         if category_error
           each error in category_error
             .bg-red-100.border.border-red-400.text-red-700.px-4.py-3.rounded.relative.mb-4(role="alert")
               span.block= error.msg
         .mb-4
-          label.block.text-gray-700 Название категории
+          label.block.text-gray-700.mb-2 Название категории
           input.w-full.p-2.border.rounded(type="text" name="category_name" placeholder="Например, Продажа" value=category_name required)
         .mb-4
-          label.block.text-gray-700 Поля категории
+          label.block.text-gray-700.mb-2 Поля категории
           select.w-full.p-2.border.rounded(name="guide_fields" multiple)
             each field in guide_fields
               option(value=field.id)= field.name
-        button.bg-blue-600.text-white.p-2.rounded(type="submit") Добавить/Обновить категорию
+        button.bg-blue-600.text-white.p-2.rounded(type="submit") Добавить категорию
       table.w-full.border-collapse.border
         thead
           tr.bg-gray-200
@@ -58,29 +58,19 @@ block content
               td.border.p-2= cat.name
               td.border.p-2= cat.guide_fields && cat.guide_fields.length ? cat.guide_fields.map(f => f.name).join(', ') : 'Нет полей'
               td.border.p-2
-                button.bg-yellow-500.text-white.p-1.rounded Редактировать
-                button.bg-red-500.text-white.p-1.rounded(data-id=cat.id onclick="deleteCategory(this)") Удалить
-      script.
-        async function deleteCategory(button) {
-          const catId = button.dataset.id;
-          const response = await fetch(`/admin/delete-category/${catId}`, { method: 'POST' });
-          if (response.ok) {
-            window.location.reload();
-          } else {
-            alert('Ошибка при удалении категории');
-          }
-        }
+                button.bg-yellow-500.text-white.p-1.rounded(data-id=cat.id data-name=cat.name data-guide-fields=JSON.stringify(cat.guide_fields.map(f => f.id)) onclick="editCategory(this)") Редактировать
+                button.bg-red-500.text-white.p-1.rounded.ml-2(data-id=cat.id onclick="deleteCategory(this)") Удалить
 
     // Manage Guide Fields and Values
-    .mb-4
-      h3.text-xl.font-semibold Управление справочниками
+    .mb-8
+      h3.text-xl.font-semibold.mb-2 Управление справочниками
       form(action="/admin/add-guide-field" method="POST").mb-4
         if guide_field_error
           each error in guide_field_error
             .bg-red-100.border.border-red-400.text-red-700.px-4.py-3.rounded.relative.mb-4(role="alert")
               span.block= error.msg
         .mb-4
-          label.block.text-gray-700 Поле справочника
+          label.block.text-gray-700.mb-2 Поле справочника
           input.w-full.p-2.border.rounded(type="text" name="field_name" placeholder="Например, Город" required value=field_name)
         button.bg-blue-600.text-white.p-2.rounded(type="submit") Добавить поле
       form(action="/admin/add-guide-value" method="POST").mb-4
@@ -89,12 +79,12 @@ block content
             .bg-red-100.border.border-red-400.text-red-700.px-4.py-3.rounded.relative.mb-4(role="alert")
               span.block= error.msg
         .mb-4
-          label.block.text-gray-700 Справочник
-          select.w-full.p-2.border.rounded(name="guide_field" required value=guide_field)
+          label.block.text-gray-700.mb-2 Справочник
+          select.w-full.p-2.border.rounded(name="guide_field" required)
             each field in guide_fields
               option(value=field.id selected=guide_field==field.id)= field.name
         .mb-4
-          label.block.text-gray-700 Значение
+          label.block.text-gray-700.mb-2 Значение
           input.w-full.p-2.border.rounded(type="text" name="field_value" placeholder="Например, Москва" required value=field_value)
         button.bg-blue-600.text-white.p-2.rounded(type="submit") Добавить значение
       table.w-full.border-collapse.border
@@ -107,17 +97,189 @@ block content
           each field in guide_fields
             tr
               td.border.p-2= field.name
-              td.border.p-2= field.guide_values && field.guide_values.length ? field.guide_values.map(v => v.value).join(', ') : 'Нет значений'
               td.border.p-2
-                button.bg-yellow-500.text-white.p-1.rounded Редактировать
-                button.bg-red-500.text-white.p-1.rounded(data-id=field.id onclick="deleteGuideField(this)") Удалить
-      script.
-        async function deleteGuideField(button) {
-          const fieldId = button.dataset.id;
-          const response = await fetch(`/admin/delete-guide-field/${fieldId}`, { method: 'POST' });
-          if (response.ok) {
+                if field.guide_values && field.guide_values.length
+                  each value in field.guide_values
+                    div.mb-1
+                      span= value.value
+                      button.bg-yellow-500.text-white.p-1.rounded.text-sm.ml-2(data-id=value.id data-value=value.value data-field-id=field.id onclick="editGuideValue(this)") Редактировать
+                      button.bg-red-500.text-white.p-1.rounded.text-sm.ml-2(data-id=value.id onclick="deleteGuideValue(this)") Удалить
+                else
+                  | Нет значений
+              td.border.p-2
+                button.bg-yellow-500.text-white.p-1.rounded(data-id=field.id data-name=field.name onclick="editGuideField(this)") Редактировать
+                button.bg-red-500.text-white.p-1.rounded.ml-2(data-id=field.id onclick="deleteGuideField(this)") Удалить
+
+    // Edit Category Modal
+    #editCategoryModal.fixed.inset-0.bg-gray-600.bg-opacity-50.hidden.flex.items-center.justify-center
+      .bg-white.p-6.rounded.shadow-lg.w-full.max-w-md
+        h3.text-xl.font-semibold.mb-4 Редактировать категорию
+        form#editCategoryForm
+          input(type="hidden" name="id")
+          .mb-4
+            label.block.text-gray-700.mb-2 Название категории
+            input.w-full.p-2.border.rounded(type="text" name="category_name" required)
+          .mb-4
+            label.block.text-gray-700.mb-2 Поля категории
+            select.w-full.p-2.border.rounded(name="guide_fields" multiple)
+              each field in guide_fields
+                option(value=field.id)= field.name
+          .flex.justify-end
+            button.bg-gray-500.text-white.p-2.rounded.mr-2(type="button" onclick="$('#editCategoryModal').addClass('hidden')") Отмена
+            button.bg-blue-600.text-white.p-2.rounded(type="submit") Сохранить
+
+    // Edit Guide Field Modal
+    #editGuideFieldModal.fixed.inset-0.bg-gray-600.bg-opacity-50.hidden.flex.items-center.justify-center
+      .bg-white.p-6.rounded.shadow-lg.w-full.max-w-md
+        h3.text-xl.font-semibold.mb-4 Редактировать поле справочника
+        form#editGuideFieldForm
+          input(type="hidden" name="id")
+          .mb-4
+            label.block.text-gray-700.mb-2 Название поля
+            input.w-full.p-2.border.rounded(type="text" name="field_name" required)
+          .flex.justify-end
+            button.bg-gray-500.text-white.p-2.rounded.mr-2(type="button" onclick="$('#editGuideFieldModal').addClass('hidden')") Отмена
+            button.bg-blue-600.text-white.p-2.rounded(type="submit") Сохранить
+
+    // Edit Guide Value Modal
+    #editGuideValueModal.fixed.inset-0.bg-gray-600.bg-opacity-50.hidden.flex.items-center.justify-center
+      .bg-white.p-6.rounded.shadow-lg.w-full.max-w-md
+        h3.text-xl.font-semibold.mb-4 Редактировать значение справочника
+        form#editGuideValueForm
+          input(type="hidden" name="id")
+          .mb-4
+            label.block.text-gray-700.mb-2 Справочник
+            select.w-full.p-2.border.rounded(name="guide_field" required)
+              each field in guide_fields
+                option(value=field.id)= field.name
+          .mb-4
+            label.block.text-gray-700.mb-2 Значение
+            input.w-full.p-2.border.rounded(type="text" name="field_value" required)
+          .flex.justify-end
+            button.bg-gray-500.text-white.p-2.rounded.mr-2(type="button" onclick="$('#editGuideValueModal').addClass('hidden')") Отмена
+            button.bg-blue-600.text-white.p-2.rounded(type="submit") Сохранить
+
+    script(src="https://code.jquery.com/jquery-3.6.0.min.js")
+    script.
+      function editCategory(button) {
+        const id = $(button).data('id');
+        const name = $(button).data('name');
+        const guideFields = $(button).data('guideFields') || [];
+        $('#editCategoryForm [name="id"]').val(id);
+        $('#editCategoryForm [name="category_name"]').val(name);
+        $('#editCategoryForm [name="guide_fields"] option').each(function() {
+          $(this).prop('selected', guideFields.includes(parseInt($(this).val())));
+        });
+        $('#editCategoryModal').removeClass('hidden');
+      }
+      function editGuideField(button) {
+        const id = $(button).data('id');
+        const name = $(button).data('name');
+        $('#editGuideFieldForm [name="id"]').val(id);
+        $('#editGuideFieldForm [name="field_name"]').val(name);
+        $('#editGuideFieldModal').removeClass('hidden');
+      }
+      function editGuideValue(button) {
+        const id = $(button).data('id');
+        const value = $(button).data('value');
+        const fieldId = $(button).data('fieldId');
+        $('#editGuideValueForm [name="id"]').val(id);
+        $('#editGuideValueForm [name="field_value"]').val(value);
+        $('#editGuideValueForm [name="guide_field"]').val(fieldId);
+        $('#editGuideValueModal').removeClass('hidden');
+      }
+      async function deleteCategory(button) {
+        if (!confirm('Вы уверены, что хотите удалить категорию?')) return;
+        const id = $(button).data('id');
+        try {
+          const response = await $.ajax({
+            url: `/admin/delete-category/${id}`,
+            method: 'POST',
+          });
+          if (response.success) {
             window.location.reload();
-          } else {
-            alert('Ошибка при удалении справочника');
           }
+        } catch (error) {
+          alert(error.responseJSON?.message || 'Ошибка при удалении');
         }
+      }
+      async function deleteGuideField(button) {
+        if (!confirm('Вы уверены, что хотите удалить поле справочника?')) return;
+        const id = $(button).data('id');
+        try {
+          const response = await $.ajax({
+            url: `/admin/delete-guide-field/${id}`,
+            method: 'POST',
+          });
+          if (response.success) {
+            window.location.reload();
+          }
+        } catch (error) {
+          alert(error.responseJSON?.message || 'Ошибка при удалении');
+        }
+      }
+      async function deleteGuideValue(button) {
+        if (!confirm('Вы уверены, что хотите удалить значение справочника?')) return;
+        const id = $(button).data('id');
+        try {
+          const response = await $.ajax({
+            url: `/admin/delete-guide-value/${id}`,
+            method: 'POST',
+          });
+          if (response.success) {
+            window.location.reload();
+          }
+        } catch (error) {
+          alert(error.responseJSON?.message || 'Ошибка при удалении');
+        }
+      }
+      $(document).ready(function() {
+        $('#editCategoryForm').on('submit', async function(e) {
+          e.preventDefault();
+          const id = $('#editCategoryForm [name="id"]').val();
+          try {
+            const response = await $.ajax({
+              url: `/admin/edit-category/${id}`,
+              method: 'POST',
+              data: $(this).serialize(),
+            });
+            if (response.success) {
+              window.location.reload();
+            }
+          } catch (error) {
+            alert(error.responseJSON?.message || 'Ошибка при сохранении');
+          }
+        });
+        $('#editGuideFieldForm').on('submit', async function(e) {
+          e.preventDefault();
+          const id = $('#editGuideFieldForm [name="id"]').val();
+          try {
+            const response = await $.ajax({
+              url: `/admin/edit-guide-field/${id}`,
+              method: 'POST',
+              data: $(this).serialize(),
+            });
+            if (response.success) {
+              window.location.reload();
+            }
+          } catch (error) {
+            alert(error.responseJSON?.message || 'Ошибка при сохранении');
+          }
+        });
+        $('#editGuideValueForm').on('submit', async function(e) {
+          e.preventDefault();
+          const id = $('#editGuideValueForm [name="id"]').val();
+          try {
+            const response = await $.ajax({
+              url: `/admin/edit-guide-value/${id}`,
+              method: 'POST',
+              data: $(this).serialize(),
+            });
+            if (response.success) {
+              window.location.reload();
+            }
+          } catch (error) {
+            alert(error.responseJSON?.message || 'Ошибка при сохранении');
+          }
+        });
+      });

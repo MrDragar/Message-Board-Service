@@ -1,0 +1,20 @@
+extends layout
+
+block content
+  .container.mx-auto.p-4
+    h2.text-3xl.font-bold.mb-4 Доступ запрещен
+    .bg-red-100.border.border-red-400.text-red-700.px-4.py-3.rounded.relative.mb-4(role="alert")
+      p Вы не имеете прав для доступа к этой странице.
+      p Пожалуйста, 
+        if user
+          | вернитесь на 
+          a.text-blue-600.hover_underline(href="/") главную страницу
+          |  или 
+          a.text-blue-600.hover_underline(href="/profile") в личный кабинет
+        else
+          | 
+          a.text-blue-600.hover_underline(href="/auth/login") войдите
+          |  или 
+          a.text-blue-600.hover_underline(href="/auth/register") зарегистрируйтесь
+    .flex
+      a.bg-blue-600.text-white.p-2.rounded(href="/") На главную

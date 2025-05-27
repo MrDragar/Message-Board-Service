@@ -41,7 +41,10 @@ block content
           tr
             td.border.p-2= ad.title
             td.border.p-2= ad.status === 'published' ? 'Опубликовано' : ad.status === 'in_moderation' ? 'На модерации' : 'Архивировано'
-            td.border.p-2= ad.guide_values.map(v => v.value).join(', ')
+            if ad.guide_values
+                td.border.p-2= ad.guide_values.map(v => v.value).join(', ')
+            else
+                td.border.p-2="Пусто"
             td.border.p-2
               a.bg-yellow-500.text-white.p-1.rounded(href=`/advertisement/edit/${ad.id}`) Редактировать
               button.bg-red-500.text-white.p-1.rounded(data-id=ad.id onclick="archiveAd(this)") Архивировать

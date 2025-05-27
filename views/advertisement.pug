@@ -10,9 +10,8 @@ block content
       p Текст: #{advertisement.content}
       p Категория: #{advertisement.category.name}
       each value in advertisement.guide_values
-        p #{value.guideField ? value.guideField.name : 'Неизвестное поле'}: #{value.value}
+        p #{value.guide_field ? value.guide_field.name : 'Неизвестное поле'}: #{value.value}
       p Статус: #{advertisement.status === 'published' ? 'Опубликовано' : advertisement.status === 'in_moderation' ? 'На модерации' : 'Архивировано'}
-      p Теги: #{advertisement.guide_values.map(v => `#${v.value}`).join(' ')}
       p Автор: #{advertisement.user.login}
       if user && (user.id === advertisement.authorId || user.role === 'moderator')
         .mt-4
@@ -23,7 +22,7 @@ block content
     // Comments
     .mb-4
       h3.text-xl.font-semibold.mb-2 Комментарии
-      if user
+      if user && advertisement.status === 'published'
         form(action=`/advertisement/${advertisement.id}/comment` method="POST").mb-4
           if comment_error
             each error in comment_error
@@ -33,36 +32,54 @@ block content
             label.block.text-gray-700.mb-2 Добавить комментарий
             textarea.w-full.p-2.border.rounded(name="content" required)
           button.bg-blue-600.text-white.p-2.rounded(type="submit") Отправить
+      else if advertisement.status !== 'published'
+        p.text-gray-600 Комментарии отключены для этого объявления
       each comment in advertisement.comments
         .border.p-2.mb-2.rounded
           p #{comment.user.login}: #{comment.content}
-          if user && (user.id === comment.authorId || user.role === 'moderator')
+          if user && (user.id === advertisement.authorId || user.role === 'moderator')
             button.bg-red-500.text-white.p-1.rounded(data-id=comment.id onclick="deleteComment(this)") Удалить
+    script(src="https://code.jquery.com/jquery-3.6.0.min.js")
     script.
       async function archiveAd(button) {
-        const adId = button.dataset.id;
-        const response = await fetch(`/advertisement/archive/${adId}`, { method: 'POST' });
-        if (response.ok) {
-          window.location.reload();
-        } else {
-          alert('Ошибка при архивировании');
+        const adId = $(button).data('id');
+        try {
+          const response = await $.ajax({
+            url: `/advertisement/archive/${adId}`,
+            method: 'POST',
+          });
+          if (response.success) {
+            window.location.reload();
+          }
+        } catch (error) {
+          alert(error.responseJSON?.message || 'Ошибка при архивировании');
         }
       }
       async function deleteComment(button) {
-        const commentId = button.dataset.id;
-        const response = await fetch(`/advertisement/comment/delete/${commentId}`, { method: 'POST' });
-        if (response.ok) {
-          window.location.reload();
-        } else {
-          alert('Ошибка при удалении комментария');
+        const commentId = $(button).data('id');
+        try {
+          const response = await $.ajax({
+            url: `/advertisement/comment/delete/${commentId}`,
+            method: 'POST',
+          });
+          if (response.success) {
+            window.location.reload();
+          }
+        } catch (error) {
+          alert(error.responseJSON?.message || 'Ошибка при удалении комментария');
         }
       }
       async function deleteAd(button) {
-        const adId = button.dataset.id;
-        const response = await fetch(`/moderator/delete-ad/${adId}`, { method: 'POST' });
-        if (response.ok) {
-          window.location.href = '/';
-        } else {
-          alert('Ошибка при удалении объявления');
+        const adId = $(button).data('id');
+        try {
+          const response = await $.ajax({
+            url: `/moderation/delete-ad/${adId}`,
+            method: 'POST',
+          });
+          if (response.success) {
+            window.location.href = '/';
+          }
+        } catch (error) {
+          alert(error.responseJSON?.message || 'Ошибка при удалении объявления');
         }
       }

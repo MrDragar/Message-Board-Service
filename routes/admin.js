@@ -51,7 +51,7 @@ router.post('/add-guide-field', [
         title: 'Админ-панель',
         user: req.user,
         guide_field_error: [{ msg: 'Данное поле существует' }],
-        field_name: req.body.field_name,
+        field_name,
         users: await User.findAll(),
         categories: await Category.findAll({ include: [GuideField] }),
         guide_fields: await GuideField.findAll({ include: GuideValue }),
@@ -61,15 +61,47 @@ router.post('/add-guide-field', [
     res.redirect('/admin');
   } catch (error) {
     console.error(error);
-    return res.render('admin', {
-      title: 'Админ-панель',
-      user: req.user,
-      guide_field_error: [{ msg: 'Ошибка на стороне сервера' }],
-      field_name: req.body.field_name,
-      users: await User.findAll(),
-      categories: await Category.findAll({ include: [GuideField] }),
-      guide_fields: await GuideField.findAll({ include: GuideValue }),
-    });
+    res.status(500).render('error', { message: 'Ошибка сервера', error });
+  }
+});
+
+/* POST edit guide field */
+router.post('/edit-guide-field/:id', [
+  authMiddleware,
+  checkRole(['admin']),
+  check('field_name', 'Название поля не должно быть пустым').notEmpty(),
+], async (req, res) => {
+  try {
+    const guideField = await GuideField.findByPk(req.params.id);
+    if (!guideField) {
+      return res.status(404).json({ message: 'Поле справочника не найдено' });
+    }
+    const { field_name } = req.body;
+    const candidate = await GuideField.findOne({ where: { name: field_name } });
+    if (candidate && candidate.id !== guideField.id) {
+      return res.status(400).json({ message: 'Поле с таким именем уже существует' });
+    }
+    guideField.name = field_name;
+    await guideField.save();
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+/* POST delete guide field */
+router.post('/delete-guide-field/:id', [authMiddleware, checkRole(['admin'])], async (req, res) => {
+  try {
+    const guideField = await GuideField.findByPk(req.params.id);
+    if (!guideField) {
+      return res.status(404).json({ message: 'Поле справочника не найдено' });
+    }
+    await guideField.destroy();
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Ошибка сервера' });
   }
 });
 
@@ -113,16 +145,49 @@ router.post('/add-guide-value', [
     res.redirect('/admin');
   } catch (error) {
     console.error(error);
-    return res.render('admin', {
-      title: 'Админ-панель',
-      user: req.user,
-      guide_value_error: [{ msg: 'Ошибка на стороне сервера' }],
-      guide_field: req.body.guide_field,
-      field_value: req.body.field_value,
-      users: await User.findAll(),
-      categories: await Category.findAll({ include: [GuideField] }),
-      guide_fields: await GuideField.findAll({ include: GuideValue }),
-    });
+    res.status(500).render('error', { message: 'Ошибка сервера', error });
+  }
+});
+
+/* POST edit guide value */
+router.post('/edit-guide-value/:id', [
+  authMiddleware,
+  checkRole(['admin']),
+  check('field_value', 'Значение не должно быть пустым').notEmpty(),
+  check('guide_field', 'Выберите поле справочника').notEmpty(),
+], async (req, res) => {
+  try {
+    const guideValue = await GuideValue.findByPk(req.params.id);
+    if (!guideValue) {
+      return res.status(404).json({ message: 'Значение справочника не найдено' });
+    }
+    const { field_value, guide_field } = req.body;
+    const candidate = await GuideValue.findOne({ where: { value: field_value, guideFieldId: guide_field } });
+    if (candidate && candidate.id !== guideValue.id) {
+      return res.status(400).json({ message: 'Значение уже существует' });
+    }
+    guideValue.value = field_value;
+    guideValue.guideFieldId = guide_field;
+    await guideValue.save();
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+/* POST delete guide value */
+router.post('/delete-guide-value/:id', [authMiddleware, checkRole(['admin'])], async (req, res) => {
+  try {
+    const guideValue = await GuideValue.findByPk(req.params.id);
+    if (!guideValue) {
+      return res.status(404).json({ message: 'Значение справочника не найдено' });
+    }
+    await guideValue.destroy();
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Ошибка сервера' });
   }
 });
 
@@ -195,9 +260,7 @@ router.post('/add-category', [
     }
     const category = await Category.create({ name: category_name });
     if (guide_fields) {
-      // Ensure guide_fields is an array
       const guideFieldIds = Array.isArray(guide_fields) ? guide_fields : [guide_fields];
-      // Fetch guide fields to ensure they exist
       const guideFields = await GuideField.findAll({
         where: { id: guideFieldIds }
       });
@@ -212,7 +275,6 @@ router.post('/add-category', [
           guide_fields: await GuideField.findAll({ include: GuideValue }),
         });
       }
-      // Associate guide fields with the category
       await category.setGuide_fields(guideFields);
     }
     res.redirect('/admin');
@@ -227,6 +289,53 @@ router.post('/add-category', [
       categories: await Category.findAll({ include: [GuideField] }),
       guide_fields: await GuideField.findAll({ include: GuideValue }),
     });
+  }
+});
+
+/* POST edit category */
+router.post('/edit-category/:id', [
+  authMiddleware,
+  checkRole(['admin']),
+  check('category_name', 'Название категории не должно быть пустым').notEmpty(),
+], async (req, res) => {
+  try {
+    const category = await Category.findByPk(req.params.id);
+    if (!category) {
+      return res.status(404).json({ message: 'Категория не найдена' });
+    }
+    const { category_name, guide_fields } = req.body;
+    const candidate = await Category.findOne({ where: { name: category_name } });
+    if (candidate && candidate.id !== category.id) {
+      return res.status(400).json({ message: 'Категория с таким именем уже существует' });
+    }
+    category.name = category_name;
+    await category.save();
+    if (guide_fields) {
+      const guideFieldIds = Array.isArray(guide_fields) ? guide_fields : [guide_fields];
+      const guideFields = await GuideField.findAll({ where: { id: guideFieldIds } });
+      await category.setGuide_fields(guideFields);
+    } else {
+      await category.setGuide_fields([]);
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+/* POST delete category */
+router.post('/delete-category/:id', [authMiddleware, checkRole(['admin'])], async (req, res) => {
+  try {
+    const category = await Category.findByPk(req.params.id);
+    if (!category) {
+      return res.status(404).json({ message: 'Категория не найдена' });
+    }
+    await category.destroy();
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Ошибка сервера' });
   }
 });
 

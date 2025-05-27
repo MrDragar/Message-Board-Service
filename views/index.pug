@@ -5,63 +5,107 @@ block content
     h2.text-3xl.font-bold.mb-4 Объявления
 
     // Search and Filters
-    form(action="/" method="GET").mb-4.bg-gray-100.p-4.rounded
+    .mb-4.bg-gray-100.p-4.rounded
       h3.text-xl.font-semibold.mb-2 Поиск и фильтры
-      .grid.grid-cols-1.md_grid-cols-3.gap-4
-        .mb-4
+      .grid.grid-cols-1(class='md:grid-cols-3 gap-4')
+        div.mb-4
           label.block.text-gray-700.mb-2 Поиск по ключевым словам
-          input.w-full.p-2.border.rounded(type="text" name="search" value=search placeholder="Введите ключевые слова")
-        .mb-4
+          input.w-full.p-2.border.rounded(type="text" id="search" placeholder="Введите ключевые слова" value=search)
+        div.mb-4
           label.block.text-gray-700.mb-2 Категория
-          select.w-full.p-2.border.rounded(name="category" id="category" onchange="updateGuideFields()")
+          select.w-full.p-2.border.rounded#category
             option(value="") Все категории
             each cat in categories
               option(value=cat.id selected=category==cat.id)= cat.name
-        .mb-4#guideFields
+        div.mb-4#guideFields
           each field in guideFields
-            .mb-4
+            div.mb-4
               label.block.text-gray-700.mb-2= field.name
-              select.w-full.p-2.border.rounded(name="guideValues")
+              select.w-full.p-2.border.rounded(data-field-id=field.id)
                 option(value="") Все #{field.name.toLowerCase()}
                 each value in field.guide_values
                   option(value=value.id selected=guideValues&&guideValues.includes(value.id.toString()))= value.value
       .flex.space-x-2
-        button.bg-blue-600.text-white.p-2.rounded(type="submit") Поиск
-        a.bg-gray-300.text-black.p-2.rounded(href="/") Очистить фильтры
+        button.bg-blue-600.text-white.p-2.rounded#filterBtn Поиск
+        button.bg-gray-300.text-black.p-2.rounded#clearBtn Очистить фильтры
 
     // Advertisements List
-    .grid.grid-cols-1.md_grid-cols-2.lg_grid-cols-3.gap-4
+    #advertisements.grid.grid-cols-1(class='md:grid-cols-2 lg:grid-cols-3 gap-4')
       each ad in advertisements
         .border.p-4.rounded.shadow
           h3.text-xl.font-semibold
             a.text-blue-600.hover_underline(href=`/advertisement/${ad.id}`)= ad.title
-          p= ad.guide_values.map(v => v.value).join(', ')
+          p= ad.guide_values.map(v => `${v.guide_field ? v.guide_field.name : 'Неизвестное поле'}: ${v.value}`).join(', ')
           p Категория: #{ad.category.name}
-          p Статус: #{ad.status === 'published' ? 'Опубликовано' : ad.status === 'in_moderation' ? 'На модерации' : 'Архивировано'}
-          p Теги: #{ad.guide_values.map(v => `#${v.value}`).join(' ')}
           p Автор: #{ad.user.login}
+
+    script(src="https://code.jquery.com/jquery-3.6.0.min.js")
     script.
-      async function updateGuideFields() {
-        const categoryId = document.getElementById('category').value;
-        const guideFieldsDiv = document.getElementById('guideFields');
-        guideFieldsDiv.innerHTML = '';
-        if (!categoryId) return;
-        try {
-          const response = await fetch(`/guide-values/${categoryId}`);
-          const guideFields = await response.json();
-          guideFields.forEach(field => {
-            const div = document.createElement('div');
-            div.className = 'mb-4';
-            div.innerHTML = `
-              <label class="block text-gray-700 mb-2">${field.name}</label>
-              <select class="w-full p-2 border rounded" name="guideValues">
-                <option value="">Все ${field.name.toLowerCase()}</option>
-                ${field.guide_values.map(value => `<option value="${value.id}">${value.value}</option>`).join('')}
-              </select>
-            `;
-            guideFieldsDiv.appendChild(div);
-          });
-        } catch (error) {
-          console.error('Error fetching guide fields:', error);
+      $(document).ready(function() {
+        $('#category').on('change', async function() {
+          const categoryId = $(this).val();
+          $('#guideFields').empty();
+          if (!categoryId) return;
+          try {
+            const response = await $.get(`/guide-values/${categoryId}`);
+            response.forEach(field => {
+              const select = $(`
+                <div class="mb-4">
+                  <label class="block text-gray-700 mb-2">${field.name}</label>
+                  <select class="w-full p-2 border rounded" data-field-id="${field.id}">
+                    <option value="">Все ${field.name.toLowerCase()}</option>
+                    ${field.guide_values.map(v => `<option value="${v.id}">${v.value}</option>`).join('')}
+                  </select>
+                </div>
+              `);
+              $('#guideFields').append(select);
+            });
+          } catch (error) {
+            console.error('Error fetching guide fields:', error);
+          }
+        });
+
+        $('#filterBtn').on('click', async function() {
+          const search = $('#search').val();
+          const category = $('#category').val();
+          const guideValues = $('#guideFields select').map(function() {
+            return $(this).val() || null;
+          }).get().filter(v => v);
+          try {
+            const response = await $.get('/filter', { search, category, guideValues });
+            $('#advertisements').empty();
+            if (response.length === 0) {
+              $('#advertisements').append('<p class="text-gray-600">Объявления не найдены</p>');
+            } else {
+              response.forEach(ad => {
+                const adHtml = `
+                  <div class="border p-4 rounded shadow">
+                    <h3 class="text-xl font-semibold">
+                      <a class="text-blue-600 hover:underline" href="/advertisement/${ad.id}">${ad.title}</a>
+                    </h3>
+                    <p>${ad.guide_values.map(v => `${v.guide_field ? v.guide_field.name : 'Неизвестное поле'}: ${v.value}`).join(', ')}</p>
+                    <p>Категория: ${ad.category.name}</p>
+                    <p>Автор: ${ad.user.login}</p>
+                  </div>
+                `;
+                $('#advertisements').append(adHtml);
+              });
+            }
+          } catch (error) {
+            alert('Ошибка при фильтрации');
+          }
+        });
+
+        $('#clearBtn').on('click', function() {
+          $('#search').val('');
+          $('#category').val('');
+          $('#guideFields').empty();
+          $('#filterBtn').trigger('click');
+        });
+
+        // Trigger initial filter if query params exist
+        if ($('#search').val() || $('#category').val()) {
+          $('#category').trigger('change');
+          setTimeout(() => $('#filterBtn').trigger('click'), 500);
         }
-      }
+      });
